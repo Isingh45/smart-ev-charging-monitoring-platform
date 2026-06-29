@@ -1,68 +1,160 @@
 # Smart EV Charging Monitoring Platform
 
 ## Overview
-Cloud-inspired EV charging monitoring system that simulates distributed charging stations and visualizes real-time telemetry data through a web dashboard.
 
-## Technologies
+A cloud-inspired EV charging monitoring platform that simulates a distributed charging infrastructure using Containernet and Docker. The system generates real-time telemetry from multiple virtual EV charging stations, synchronizes telemetry through a custom data pipeline, exposes the data through a REST API, and visualizes live system status using a React dashboard.
+
+The project demonstrates cloud computing concepts through a local cloud simulation by integrating distributed edge nodes, centralized data synchronization, API services, and real-time web-based visualization.
+
+---
+
+# Technologies
+
 * React
 * Python
 * Docker
-* Containernet
+* Containernet (Software-Defined Networking)
 * Bash
+* JSON
 * JSON Server
 
-## Architecture
-EV Stations (Docker + Containernet) -> Telemetry Generation (Python) -> Synchronization Pipeline (Bash) -> JSON Storage -> REST API (json-server) -> React Dashboard
+---
 
-## Features
-* Real-time telemetry monitoring
-* Battery and voltage tracking
-* Station recommendation logic
-* Live voltage trend visualization
-* Distributed edge-node simulation
+# Architecture
 
-## Repository Structure
-* docs/ — Final project report and presentation
-* source_code/ — Smart EV simulation, pipeline, API integration, and React dashboard
-
-## How to Run
-
-### 1. Prerequisites
-Ensure the following are installed on an Ubuntu Linux environment:
-* Containernet (SDN Framework)
-* Docker and Node.js
-* Global API Tool: sudo npm install -g json-server
-
-### 2. Execution Steps
-
-* Step 1: Start the Topology
-  sudo python3 ~/smart_ev_lab/smart_ev_sim.py
-
-* Step 2: Initialize Telemetry (Run inside containernet> prompt)
-  * Station 1:
-    station1 python3 -c "import time, json, random; f=open('/ev_sim_cloud_log.json','a'); [f.write(json.dumps({'station_id':'STN-001', 'battery_pct':round(random.uniform(60,95),1), 'voltage_v':round(random.uniform(230, 245), 2)})+'\n') or f.flush() or time.sleep(2) for _ in range(1000)]" &
-  * Station 2:
-    station2 python3 -c "import time, json, random; f=open('/ev_sim_cloud_log.json','a'); [f.write(json.dumps({'station_id':'STN-002', 'battery_pct':round(random.uniform(20,60),1), 'voltage_v':round(random.uniform(230, 245), 2)})+'\n') or f.flush() or time.sleep(2) for _ in range(1000)]" &
-
-* Step 3: Launch API Bridge (New Terminal)
-  json-server --watch ~/smart_ev_lab/ev_sim_cloud_log.json --port 5000
-
-* Step 4: Start Sync Pipeline (New Terminal)
-  while true; do sudo docker cp mn.station1:/ev_sim_cloud_log.json ~/smart_ev_lab/stn1.json 2>/dev/null; sudo docker cp mn.station2:/ev_sim_cloud_log.json ~/smart_ev_lab/stn2.json 2>/dev/null; echo '{"telemetry": [' > ~/smart_ev_lab/temp_log.json; { tail -n 15 ~/smart_ev_lab/stn1.json 2>/dev/null; tail -n 15 ~/smart_ev_lab/stn2.json 2>/dev/null; } | grep "{" | paste -sd, - >> ~/smart_ev_lab/temp_log.json; echo ']}' >> ~/smart_ev_lab/temp_log.json; mv ~/smart_ev_lab/temp_log.json ~/smart_ev_lab/ev_sim_cloud_log.json; sleep 2; done
-
-* Step 5: Launch Dashboard (New Terminal)
-  cd ~/smart_ev_lab/ev-dashboard && npm install && npm start
-
-## What I Learned
-* Managing application state in client-side JavaScript and polling telemetry datasets asynchronously.
-* Building decoupled pipelines to handle multi-node concurrency conflicts and file-locking issues.
-* Emulating network infrastructure topologies locally using containerization frameworks.
-
-## Future Improvements
-* Search functionality
-* Improved UI/UX styling
-* Optional backend integration
+```
+Docker EV Stations (Containernet)
+            │
+            ▼
+Python Telemetry Generation
+            │
+            ▼
+Bash Synchronization Pipeline
+            │
+            ▼
+Central JSON Storage
+            │
+            ▼
+REST API (json-server)
+            │
+            ▼
+React Dashboard
+```
 
 ---
-**Authors:** Inderpal Singh & Sukhpinder Singh  
-**Course:** CS 623 Cloud Computing — California State University, East Bay (Spring 2026)
+
+# Features
+
+* **Distributed EV Station Simulation:** Simulates multiple EV charging stations using Docker containers connected through a Containernet software-defined network.
+
+* **Real-Time Telemetry Generation:** Generates simulated battery percentage, voltage, current, and charging status for each virtual charging station using Python.
+
+* **Telemetry Synchronization Pipeline:** Uses a custom Bash pipeline to continuously collect telemetry from multiple Docker containers, merge the latest records, and maintain a centralized JSON data source.
+
+* **REST API Integration:** Exposes synchronized telemetry through JSON Server, allowing the frontend to retrieve live station data using standard HTTP requests.
+
+* **Live Monitoring Dashboard:** Displays battery percentage, voltage, station availability, and recommended charging station through a React-based dashboard.
+
+* **Real-Time Voltage Visualization:** Continuously updates a time-series voltage graph using Recharts to visualize charging station telemetry.
+
+* **Station Recommendation Logic:** Evaluates live battery and voltage metrics to recommend the most suitable charging station.
+
+---
+
+# Repository Structure
+
+```
+docs/
+    Final Project Report
+    Final Presentation
+
+source_code/
+    smart_ev_lab/
+        smart_ev_sim.py
+        run_pipeline.sh
+        ev-dashboard/
+```
+
+---
+
+# How to Run
+
+## Prerequisites
+
+Install the following on Ubuntu Linux:
+
+* Containernet
+* Docker
+* Node.js
+* JSON Server
+
+```
+sudo npm install -g json-server
+```
+
+---
+
+## Execution Steps
+
+### 1. Launch the EV Network Simulation
+
+```
+sudo python3 smart_ev_sim.py
+```
+
+### 2. Generate Telemetry
+
+Run the provided telemetry commands inside the Containernet CLI for each virtual charging station.
+
+### 3. Start the REST API
+
+```
+json-server --watch ~/smart_ev_lab/ev_sim_cloud_log.json --port 5000
+```
+
+### 4. Start the Synchronization Pipeline
+
+```
+bash run_pipeline.sh
+```
+
+### 5. Launch the React Dashboard
+
+```
+cd ev-dashboard
+npm install
+npm start
+```
+
+---
+
+# What I Learned
+
+* Designing distributed system architectures using Docker and Containernet.
+* Building real-time telemetry pipelines using Python, Bash, and JSON.
+* Integrating REST APIs with React applications for live data visualization.
+* Managing asynchronous client-side state updates through periodic polling.
+* Developing modular software components that separate simulation, data synchronization, API services, and frontend visualization.
+
+---
+
+# Future Improvements
+
+* Replace the local JSON-based API with a cloud-hosted backend such as AWS or Google Cloud.
+* Implement persistent database storage for long-term telemetry retention.
+* Add user authentication and charging station reservation capabilities.
+* Expand the simulation to support additional charging stations and larger network topologies.
+
+---
+
+# Authors
+
+**Inderpal Singh**
+
+**Sukhpinder Singh**
+
+California State University, East Bay
+
+CS 623 – Cloud Computing
+
+Spring 2026
